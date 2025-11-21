@@ -1,0 +1,67 @@
+# This is the single configuration block for the o11y library.
+# It should be placed within your application's main configuration file.
+o11y:
+  # A global switch to enable or disable all observability features.
+  # Set to false in local development or for tests to avoid overhead.
+  enabled: true
+  
+  # The name of your service (e.g., "user-api", "order-service").
+  # This is the most important tag for identifying your telemetry data.
+  service: "example-server"
+  
+  # The current version of your service.
+  version: "1.0.5"
+  
+  # The environment where the service is running (e.g., "development", "staging", "production").
+  environment: "development"
+
+  # The logical name for the meters and tracers created by this library.
+  # Defaults to "o11y".
+  instrumentation_scope: "o11y.example"
+
+  log:
+    # ... (log config remains the same) ...
+    level: "debug"
+    time_precision: "ms"
+    caller: true
+    console: true
+    file: true
+    rotation:
+      filename: "logs/app.log"
+      max_size: 10
+      max_backups: 3
+      max_age: 7
+      compress: true
+
+  trace:
+    enabled: true
+    
+    # "stdout" is great for local development to see traces in your terminal.
+    # For production, use "otlp-grpc".
+    exporter: "stdout"
+    
+    # The endpoint of your OpenTelemetry Collector. Only used for "otlp-grpc".
+    endpoint: "localhost:4317"
+    
+    # Use an insecure connection for OTLP. Set to 'false' in production.
+    otlp_insecure: true
+    
+    # Sample all traces. For high-traffic production, use a lower value like 0.1 (10%).
+    sample_ratio: 1.0
+
+  metric:
+    enabled: true
+    
+    # Expose a /metrics endpoint for Prometheus to scrape.
+    exporter: "prometheus"
+    
+    # The address for the Prometheus scrape endpoint to listen on.
+    # Defaults to ":2222".
+    prometheus_addr: ":2222"
+    
+    # The path for the Prometheus scrape endpoint.
+    # Defaults to "/metrics".
+    prometheus_path: "/metrics"
+
+    # Enable automatic collection of host metrics (CPU, memory).
+    enable_host_metrics: true
