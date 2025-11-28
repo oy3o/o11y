@@ -94,34 +94,47 @@ func main() {
 }
 ```
 
-### 3. Database & gRPC Integration
+### 3. Full Stack Instrumentation
 
-`o11y` provides wrappers to instrument other parts of your system easily.
+`o11y` now covers your entire stack:
 
-**Database (SQL):**
+#### Database (SQL)
+Drop-in replacement for `sql.Open`. Automatically adds Tracing (with SQL parameters) and Metrics.
+
 ```go
 // Use o11y.OpenSQL instead of sql.Open
-db, err := o11y.OpenSQL("postgres", "postgres://user:pass@localhost:5432/db")
-if err != nil {
-    log.Fatal().Err(err).Msg("failed to connect")
-}
-// Register connection pool stats (optional)
+db, err := o11y.OpenSQL("postgres", "dsn...")
+
+// Or with a Connector (e.g., for pgx)
+db := o11y.OpenDBWithConnector("pgx", connector)
+
+// Register Connection Pool Metrics
 o11y.RegisterDBStatsMetrics(db, "primary-db")
 ```
 
-**gRPC Server:**
+#### gRPC
+Client and Server interceptors with panic recovery and context propagation.
+
 ```go
-// Add o11y options to your gRPC server
+// Server
 s := grpc.NewServer(o11y.GRPCServerOptions()...)
+
+// Client
+conn, err := grpc.Dial(target, o11y.WithGRPCClientInstrumentation()...)
 ```
 
-**HTTP Client:**
+#### HTTP
+Standard Middleware and Client wrappers.
+
 ```go
-// Use the instrumented client for outbound requests
+// Server Middleware
+mux = o11y.Handler(cfg)(mux)
+
+// Client
 client := o11y.NewHTTPClient(nil)
 ```
 
-### 4. Empower Your Business Logic with `o11y.Run()`
+#### 4. Empower Your Business Logic with `o11y.Run()`
 
 Wrap your business code to get all observability features for free.
 

@@ -87,30 +87,44 @@ func main() {
 }
 ```
 
-### 3. 数据库与 gRPC 集成
 
-`o11y` 为系统的其他组件提供了简易的封装：
+### 3. 全栈插桩（Instrumentation）
 
-**数据库 (SQL):**
+`o11y` 现已覆盖您的整个技术栈：
+
+#### 数据库 (SQL)
+`sql.Open` 的无缝替换方案。自动添加链路追踪（包含 SQL 参数）和指标监控。
+
 ```go
 // 使用 o11y.OpenSQL 替代 sql.Open
-db, err := o11y.OpenSQL("postgres", "postgres://user:pass@localhost:5432/db")
-if err != nil {
-    log.Fatal().Err(err).Msg("failed to connect")
-}
-// 注册连接池指标 (可选)
+db, err := o11y.OpenSQL("postgres", "dsn...")
+
+// 或者使用 Connector（例如用于 pgx）
+db := o11y.OpenDBWithConnector("pgx", connector)
+
+// 注册连接池指标
 o11y.RegisterDBStatsMetrics(db, "primary-db")
 ```
 
-**gRPC 服务端:**
+#### gRPC
+包含 Panic 恢复和上下文传播功能的客户端与服务端拦截器。
+
 ```go
-// 添加 o11y 推荐的 ServerOptions
+// 服务端
 s := grpc.NewServer(o11y.GRPCServerOptions()...)
+
+// 客户端
+conn, err := grpc.Dial(target, o11y.WithGRPCClientInstrumentation()...)
 ```
 
-**HTTP 客户端:**
+#### HTTP
+标准中间件和客户端封装。
+
 ```go
-// 使用带有追踪功能的 HTTP Client
+// 服务端中间件
+mux = o11y.Handler(cfg)(mux)
+
+// 客户端
 client := o11y.NewHTTPClient(nil)
 ```
 
