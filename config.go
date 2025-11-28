@@ -113,7 +113,7 @@ type TraceConfig struct {
 	// 1.0 means sampling all traces.
 	// 0.5 means sampling 50% of the traces.
 	// 0.0 means not sampling any traces.
-	SampleRatio float64 `yaml:"sample_ratio" mapstructure:"sample_ratio"`
+	SampleRatio float64 `yaml:"sample_ratio" mapstructure:"sample_ratio" validate:"min=0,max=1"`
 }
 
 // MetricConfig defines the configuration for metric statistics.

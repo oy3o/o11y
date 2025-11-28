@@ -71,7 +71,9 @@ func Handler(cfg Config) func(http.Handler) http.Handler {
 							Msg("HTTP request recovered from panic")
 
 						// Write 500 error. This updates the httpsnoop writer state.
-						http.Error(ww, "Internal Server Error", http.StatusInternalServerError)
+						ww.WriteHeader(http.StatusInternalServerError)
+						ww.Header().Set("Content-Type", "application/json; charset=utf-8")
+						fmt.Fprintf(ww, `{"code":"INTERNAL_ERROR","message":"Internal Server Error","trace_id":"%s"}`, ww.Header().Get("X-Trace-ID"))
 					}
 				}()
 

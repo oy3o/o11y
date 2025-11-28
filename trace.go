@@ -2,6 +2,7 @@ package o11y
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
@@ -18,13 +19,13 @@ import (
 // It determines which exporter to use, sets the sampling rate, and combines everything
 // into a TracerProvider that is then set as the global default for the application.
 // It returns the configured provider and its corresponding shutdown function.
-func setupTracing(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider, ShutdownFunc) {
+func setupTracing(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider, ShutdownFunc, error) {
 	// 1. Handle the Enabled switch. If disabled, install a no-op provider and return.
 	if !cfg.Enabled {
 		tp := tc.NewTracerProvider(tc.WithResource(res))
 		otel.SetTracerProvider(tp)
 		// Return a no-op shutdown function.
-		return tp, func(context.Context) error { return nil }
+		return tp, func(context.Context) error { return nil }, nil
 	}
 
 	// 2. Create the appropriate SpanExporter based on the configuration.
@@ -34,8 +35,6 @@ func setupTracing(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider
 	switch cfg.Exporter {
 	case "otlp-grpc":
 		log.Info().Msgf("Initializing OTLP gRPC trace exporter with endpoint: %s", cfg.Endpoint)
-
-		// Prepare gRPC options based on config.
 		grpcOpts := []otlptracegrpc.Option{
 			otlptracegrpc.WithEndpoint(cfg.Endpoint),
 		}
@@ -43,13 +42,8 @@ func setupTracing(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider
 			grpcOpts = append(grpcOpts, otlptracegrpc.WithInsecure())
 			log.Warn().Msg("OTLP trace exporter is using an insecure gRPC connection.")
 		}
-
-		exporter, err = otlptracegrpc.New(
-			context.Background(),
-			grpcOpts...,
-		)
+		exporter, err = otlptracegrpc.New(context.Background(), grpcOpts...)
 	case "stdout":
-		// This exporter prints traces to the standard output. It's very useful for local debugging.
 		log.Info().Msg("Initializing stdout trace exporter.")
 		exporter, err = stdouttrace.New(stdouttrace.WithPrettyPrint())
 	default: // "none" or any other value
@@ -60,8 +54,7 @@ func setupTracing(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider
 	}
 
 	if err != nil {
-		// A failure to create an exporter is a critical configuration error.
-		log.Fatal().Err(err).Msgf("Failed to create trace exporter: %s", cfg.Exporter)
+		return nil, nil, fmt.Errorf("failed to create trace exporter %s: %w", cfg.Exporter, err)
 	}
 
 	// 3. Configure the sampler based on the specified ratio.
@@ -102,5 +95,5 @@ func setupTracing(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider
 
 	// 7. Return the provider and its shutdown function.
 	// The shutdown function ensures that the batch processor is flushed before the application exits.
-	return tp, tp.Shutdown
+	return tp, tp.Shutdown, nil
 }

@@ -1,5 +1,3 @@
-// start of ./grpc_test.go
-
 package o11y
 
 import (
@@ -15,7 +13,7 @@ import (
 // TestUnaryServerInterceptor_Success verifies normal execution
 func TestUnaryServerInterceptor_Success(t *testing.T) {
 	cfg := Config{Enabled: true, Trace: TraceConfig{Enabled: true, Exporter: "none"}}
-	shutdown := Init(cfg)
+	shutdown, _ := Init(cfg)
 	defer shutdown(context.Background())
 
 	interceptor := unaryServerInterceptor()
@@ -32,7 +30,7 @@ func TestUnaryServerInterceptor_Success(t *testing.T) {
 // TestUnaryServerInterceptor_Panic verifies panic is recovered and converted to error
 func TestUnaryServerInterceptor_Panic(t *testing.T) {
 	cfg := Config{Enabled: true, Metric: MetricConfig{Enabled: true, Exporter: "none"}}
-	shutdown := Init(cfg)
+	shutdown, _ := Init(cfg)
 	defer shutdown(context.Background())
 
 	// Ensure the metric used in panic recovery is registered to avoid log noise/errors
@@ -59,7 +57,7 @@ func TestUnaryServerInterceptor_Panic(t *testing.T) {
 // Note: This depends on the fix suggested previously (using named return 'err')
 func TestStreamServerInterceptor_Panic(t *testing.T) {
 	cfg := Config{Enabled: true, Metric: MetricConfig{Enabled: true, Exporter: "none"}}
-	shutdown := Init(cfg)
+	shutdown, _ := Init(cfg)
 	defer shutdown(context.Background())
 
 	RegisterInt64Counter("rpc.server.panics", "test", "{panic}")

@@ -2,17 +2,12 @@ package o11y
 
 import (
 	"context"
-	"fmt"
-	"io"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
-	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 	"go.opentelemetry.io/otel/trace"
-	"golang.org/x/sync/errgroup"
 )
 
 // ShutdownFunc is a function signature for gracefully shutting down an observability component.
@@ -41,71 +36,25 @@ func GetTraceID(ctx context.Context) string {
 // It is the primary entry point for the o11y library.
 // It will panic on critical setup failures.
 // It returns a single aggregate ShutdownFunc that must be called to ensure all components are closed gracefully.
-func Init(cfg Config) ShutdownFunc {
+func Init(cfg Config) (ShutdownFunc, error) {
 	return initialization(cfg, setupLogging, setupTracing, setupMetrics)
 }
 
 func initialization(
 	cfg Config,
 	setupLogging func(cfg LogConfig) (zerolog.Logger, ShutdownFunc),
-	setupTracing func(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider, ShutdownFunc),
-	setupMetrics func(cfg MetricConfig, res *resource.Resource) (metric.MeterProvider, ShutdownFunc),
-) ShutdownFunc {
-	// 1. Set sensible defaults for any unset configuration values.
-	if cfg.InstrumentationScope == "" {
-		cfg.InstrumentationScope = "o11y" // Default scope name
-	}
-	if cfg.Metric.PrometheusAddr == "" {
-		cfg.Metric.PrometheusAddr = ":2222" // Default prometheus port
-	}
-	if cfg.Metric.PrometheusPath == "" {
-		cfg.Metric.PrometheusPath = "/metrics"
-	}
-
-	// 2. Handle the global enabled switch.
-	if !cfg.Enabled {
-		log.Logger = zerolog.New(io.Discard)
-		return func(ctx context.Context) error { return nil }
-	}
-
-	// 3. Create a shared OpenTelemetry Resource.
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceName(cfg.Service),
-			semconv.ServiceVersion(cfg.Version),
-			semconv.DeploymentEnvironmentName(cfg.Environment),
-		),
-	)
+	setupTracing func(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider, ShutdownFunc, error),
+	setupMetrics func(cfg MetricConfig, res *resource.Resource) (metric.MeterProvider, ShutdownFunc, error),
+) (ShutdownFunc, error) {
+	// Initialize package-level tracer and meter for the library to use.
+	p, err := New(cfg, setupLogging, setupTracing, setupMetrics)
 	if err != nil {
-		panic(fmt.Errorf("failed to create OpenTelemetry resource: %w", err))
+		return nil, err
 	}
 
-	// 4. Set up logging.
-	logger, logShutdown := setupLogging(cfg.Log)
-	finalLogger := logger.With().
-		Timestamp().
-		Str("service", cfg.Service).
-		Str("version", cfg.Version).
-		Str("environment", cfg.Environment).
-		Logger().
-		Hook(PanicHook(cfg.Log.StackFilters))
-
-	log.Logger = finalLogger
-	log.Info().Msg("Logging initialized.")
-
-	// 5. Set up tracing.
-	_, traceShutdown := setupTracing(cfg.Trace, res)
-	log.Info().Msg("Tracing initialized.")
-
-	// 6. Set up metrics.
-	mp, metricShutdown := setupMetrics(cfg.Metric, res)
-	log.Info().Msg("Metrics initialized.")
-
-	// 7. Initialize package-level tracer and meter for the library to use.
-	Tracer = otel.Tracer(cfg.InstrumentationScope)
-	Meter = mp.Meter(cfg.InstrumentationScope)
+	Tracer = p.Tracer
+	Meter = p.Meter
+	log.Logger = p.Logger
 
 	if cfg.Metric.Enabled {
 		// Initialize our pre-defined, standard metrics.
@@ -126,45 +75,5 @@ func initialization(
 		log.Info().Msg("Metrics disabled by config, skipping standard and runtime metric initialization.")
 	}
 
-	// 8. Aggregate all shutdown functions.
-	return func(ctx context.Context) error {
-		log.Info().Msg("Shutting down o11y components...")
-
-		var g errgroup.Group
-
-		g.Go(func() error {
-			log.Debug().Msg("Shutting down metrics provider...")
-			if err := metricShutdown(ctx); err != nil {
-				log.Error().Err(err).Msg("Failed to shutdown metrics provider")
-				return err
-			}
-			return nil
-		})
-
-		g.Go(func() error {
-			log.Debug().Msg("Shutting down tracer provider...")
-			if err := traceShutdown(ctx); err != nil {
-				log.Error().Err(err).Msg("Failed to shutdown tracer provider")
-				return err
-			}
-			return nil
-		})
-
-		shutdownErr := g.Wait()
-
-		if err := logShutdown(ctx); err != nil {
-			fmt.Printf("error: failed to shutdown logger: %v\n", err)
-			if shutdownErr != nil {
-				shutdownErr = fmt.Errorf("multiple shutdown errors: %w; log shutdown error: %v", shutdownErr, err)
-			} else {
-				shutdownErr = err
-			}
-		}
-
-		if shutdownErr == nil {
-			log.Info().Msg("o11y shutdown complete.")
-		}
-
-		return shutdownErr
-	}
+	return p.Shutdown, nil
 }

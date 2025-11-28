@@ -103,7 +103,7 @@ func TestInit_Logging_Configuration(t *testing.T) {
 
 			// --- 执行测试 ---
 			// 调用 Init 来设置全局 Logger
-			shutdown := o11y.Init(tc.config)
+			shutdown, _ := o11y.Init(tc.config)
 
 			// 执行日志记录操作
 			tc.logAction()
@@ -187,7 +187,7 @@ func TestInit_Logging_Level(t *testing.T) {
 				},
 			}
 
-			shutdown := o11y.Init(cfg)
+			shutdown, _ := o11y.Init(cfg)
 			// 在这个测试中，shutdown 没什么用，但调用它是个好习惯
 			defer shutdown(context.Background())
 

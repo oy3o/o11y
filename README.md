@@ -80,7 +80,7 @@ func main() {
 	cfg, _ := conf.Load[Config]("config.yaml")
 
 	// 2. Initialize o11y
-	shutdown := o11y.Init(cfg)
+	shutdown, _ := o11y.Init(cfg)
 	defer shutdown(context.Background()) 
 
 	// 3. Set up HTTP routes and apply the o11y middleware

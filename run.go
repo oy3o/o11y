@@ -19,7 +19,7 @@ func Run(
 	ctx context.Context,
 	name string, // e.g., "ProcessOrder", "ValidateUserCredentials"
 	fn func(ctx context.Context, s State) error,
-) error {
+) (err error) {
 	// 1. Prepare Observability Objects
 	parentLogger := GetLoggerFromContext(ctx)
 
@@ -37,6 +37,7 @@ func Run(
 	ctxWithLogger := spanLogger.WithContext(ctxWithSpan)
 
 	s := State{
+		ctx:   ctxWithLogger,
 		Log:   spanLogger,
 		span:  span,
 		meter: Meter,
@@ -45,13 +46,24 @@ func Run(
 	// 2. Automatic Panic Handling
 	defer func() {
 		if r := recover(); r != nil {
-			err := fmt.Errorf("panic recovered in o11y.Run: %v", r)
+			// 捕获 Panic 并转换为 Error。
+			// 这样上层调用者可以像处理普通错误一样处理 Panic（例如返回 500 响应），
+			// 同时也保证了 Span 和 Metrics 的正确记录。
+			panicErr := fmt.Errorf("panic recovered in o11y.Run: %v", r)
 
-			span.RecordError(err, trace.WithStackTrace(true))
+			// 记录到 Span
+			span.RecordError(panicErr, trace.WithStackTrace(true))
 			span.SetStatus(codes.Error, "panic occurred")
 
-			s.Log.Panic().Msgf("Panic during operation: %v", r)
-			panic(r)
+			// 记录到 Log (使用 PanicLevel 可能会导致 os.Exit，视 zerolog 配置而定，这里改用 Error 级别更安全)
+			s.Log.Error().Msgf("Panic recovered during operation: %v", r)
+
+			// 记录 Metrics (因为正常的 return err 路径会被跳过，所以这里要手动记)
+			operationAttr := attribute.String("operation", name)
+			s.IncCounter("app.operation.errors.total", operationAttr)
+
+			// 将 panic 错误赋值给返回变量
+			err = panicErr
 		}
 	}()
 
@@ -64,7 +76,7 @@ func Run(
 	}()
 
 	// 4. Execute business logic
-	err := fn(ctxWithLogger, s)
+	err = fn(ctxWithLogger, s)
 
 	// 5. Result Handling
 	operationAttr := attribute.String("operation", name)

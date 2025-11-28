@@ -86,7 +86,7 @@ func TestHandlerMiddleware(t *testing.T) {
 			Enabled: true,
 		},
 	}
-	shutdown := Init(cfg)
+	shutdown, _ := Init(cfg)
 	defer shutdown(context.Background())
 
 	// Create a test handler that the middleware will wrap
@@ -178,7 +178,7 @@ func TestHandlerMiddlewarePanicRecovery(t *testing.T) {
 			Enabled: true,
 		},
 	}
-	shutdown := Init(cfg)
+	shutdown, _ := Init(cfg)
 	defer shutdown(context.Background())
 
 	// Create a test handler that will panic

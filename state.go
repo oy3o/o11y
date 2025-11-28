@@ -14,6 +14,9 @@ import (
 // It encapsulates logging, tracing, and metric functionalities tied to the current operation,
 // providing a simplified and consistent API for all observability needs.
 type State struct {
+	//
+	ctx context.Context
+
 	// Log is a zerolog.Logger instance pre-configured with the correct trace_id and span_id.
 	// Developers should use this for all logging within the o11y.Run block to ensure
 	// logs are automatically correlated with traces.
@@ -81,7 +84,7 @@ func (s State) AddEvent(name string, attributes ...attribute.KeyValue) {
 //
 //	s.IncCounter("app.cache.events.total", attribute.String("result", "hit"))
 func (s State) IncCounter(name string, attributes ...attribute.KeyValue) {
-	AddToIntCounter(context.Background(), name, 1, attributes...)
+	AddToIntCounter(s.ctx, name, 1, attributes...)
 }
 
 // RecordHistogram records a value in a pre-registered histogram metric.
@@ -96,5 +99,5 @@ func (s State) IncCounter(name string, attributes ...attribute.KeyValue) {
 //	duration := time.Since(startTime).Seconds()
 //	s.RecordHistogram("db.client.duration", duration, attribute.String("db.table", "users"))
 func (s State) RecordHistogram(name string, value float64, attributes ...attribute.KeyValue) {
-	RecordInFloat64Histogram(context.Background(), name, value, attributes...)
+	RecordInFloat64Histogram(s.ctx, name, value, attributes...)
 }

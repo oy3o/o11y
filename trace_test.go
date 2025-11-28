@@ -22,7 +22,7 @@ func TestSetupTracing_Propagator(t *testing.T) {
 	}
 	res := resource.Default()
 
-	_, shutdown := setupTracing(cfg, res)
+	_, shutdown, _ := setupTracing(cfg, res)
 	defer shutdown(context.Background())
 
 	// Check if the global propagator has been set.

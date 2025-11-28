@@ -38,7 +38,10 @@ func main() {
 
 	// --- 2. Initialize o11y Library ---
 	// This single line sets up logging, tracing, and metrics!
-	shutdown := o11y.Init(cfg.O11y)
+	shutdown, err := o11y.Init(cfg.O11y)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to initialize o11y")
+	}
 	// Defer the shutdown function to ensure all telemetry data is flushed before exit.
 	defer shutdown(context.Background())
 

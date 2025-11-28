@@ -74,7 +74,7 @@ func main() {
     cfg, _ := conf.Load[Config]("config.yaml")
 
     // 2. 初始化 o11y
-    shutdown := o11y.Init(cfg)
+    shutdown,_ := o11y.Init(cfg)
     defer shutdown(context.Background()) 
 
     // 3. 设置 HTTP 路由并应用 o11y 中间件

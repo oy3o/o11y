@@ -1,5 +1,3 @@
-// start of ./wrapper_test.go
-
 package o11y
 
 import (

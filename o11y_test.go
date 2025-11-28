@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/trace"
+	noopt "go.opentelemetry.io/otel/trace/noop"
 )
 
 // initHostMetrics verifies that host metrics are initialized based on configuration.
@@ -38,11 +39,11 @@ func TestInitHostMetrics(t *testing.T) {
 			mockSetupLogging := func(cfg LogConfig) (zerolog.Logger, ShutdownFunc) {
 				return zerolog.New(&logBuffer), func(ctx context.Context) error { return nil }
 			}
-			mockSetupTracing := func(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider, ShutdownFunc) {
-				return nil, func(ctx context.Context) error { return nil }
+			mockSetupTracing := func(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider, ShutdownFunc, error) {
+				return noopt.NewTracerProvider(), func(ctx context.Context) error { return nil }, nil
 			}
-			mockSetupMetrics := func(cfg MetricConfig, res *resource.Resource) (metric.MeterProvider, ShutdownFunc) {
-				return noop.NewMeterProvider(), func(ctx context.Context) error { return nil }
+			mockSetupMetrics := func(cfg MetricConfig, res *resource.Resource) (metric.MeterProvider, ShutdownFunc, error) {
+				return noop.NewMeterProvider(), func(ctx context.Context) error { return nil }, nil
 			}
 
 			cfg := Config{
@@ -60,7 +61,7 @@ func TestInitHostMetrics(t *testing.T) {
 				},
 			}
 
-			shutdown := initialization(cfg, mockSetupLogging, mockSetupTracing, mockSetupMetrics)
+			shutdown, _ := initialization(cfg, mockSetupLogging, mockSetupTracing, mockSetupMetrics)
 			defer func() {
 				assert.NoError(t, shutdown(context.Background()))
 			}()
@@ -81,11 +82,11 @@ func TestInitDisabledGlobally(t *testing.T) {
 	mockSetupLogging := func(cfg LogConfig) (zerolog.Logger, ShutdownFunc) {
 		return zerolog.New(&logBuffer), func(ctx context.Context) error { return nil }
 	}
-	mockSetupTracing := func(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider, ShutdownFunc) {
-		return nil, func(ctx context.Context) error { return nil }
+	mockSetupTracing := func(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider, ShutdownFunc, error) {
+		return noopt.NewTracerProvider(), func(ctx context.Context) error { return nil }, nil
 	}
-	mockSetupMetrics := func(cfg MetricConfig, res *resource.Resource) (metric.MeterProvider, ShutdownFunc) {
-		return noop.NewMeterProvider(), func(ctx context.Context) error { return nil }
+	mockSetupMetrics := func(cfg MetricConfig, res *resource.Resource) (metric.MeterProvider, ShutdownFunc, error) {
+		return noop.NewMeterProvider(), func(ctx context.Context) error { return nil }, nil
 	}
 
 	cfg := Config{
@@ -103,7 +104,7 @@ func TestInitDisabledGlobally(t *testing.T) {
 		},
 	}
 
-	shutdown := initialization(cfg, mockSetupLogging, mockSetupTracing, mockSetupMetrics)
+	shutdown, _ := initialization(cfg, mockSetupLogging, mockSetupTracing, mockSetupMetrics)
 	defer func() {
 		assert.NoError(t, shutdown(context.Background()))
 	}()
@@ -118,11 +119,11 @@ func TestInitMetricsDisabled(t *testing.T) {
 	mockSetupLogging := func(cfg LogConfig) (zerolog.Logger, ShutdownFunc) {
 		return zerolog.New(&logBuffer), func(ctx context.Context) error { return nil }
 	}
-	mockSetupTracing := func(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider, ShutdownFunc) {
-		return nil, func(ctx context.Context) error { return nil }
+	mockSetupTracing := func(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider, ShutdownFunc, error) {
+		return noopt.NewTracerProvider(), func(ctx context.Context) error { return nil }, nil
 	}
-	mockSetupMetrics := func(cfg MetricConfig, res *resource.Resource) (metric.MeterProvider, ShutdownFunc) {
-		return noop.NewMeterProvider(), func(ctx context.Context) error { return nil }
+	mockSetupMetrics := func(cfg MetricConfig, res *resource.Resource) (metric.MeterProvider, ShutdownFunc, error) {
+		return noop.NewMeterProvider(), func(ctx context.Context) error { return nil }, nil
 	}
 
 	cfg := Config{
@@ -140,7 +141,7 @@ func TestInitMetricsDisabled(t *testing.T) {
 		},
 	}
 
-	shutdown := initialization(cfg, mockSetupLogging, mockSetupTracing, mockSetupMetrics)
+	shutdown, _ := initialization(cfg, mockSetupLogging, mockSetupTracing, mockSetupMetrics)
 	defer func() {
 		assert.NoError(t, shutdown(context.Background()))
 	}()
@@ -157,11 +158,11 @@ func TestInitStandardMetrics(t *testing.T) {
 	mockSetupLogging := func(cfg LogConfig) (zerolog.Logger, ShutdownFunc) {
 		return zerolog.New(&logBuffer), func(ctx context.Context) error { return nil }
 	}
-	mockSetupTracing := func(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider, ShutdownFunc) {
-		return nil, func(ctx context.Context) error { return nil }
+	mockSetupTracing := func(cfg TraceConfig, res *resource.Resource) (trace.TracerProvider, ShutdownFunc, error) {
+		return noopt.NewTracerProvider(), func(ctx context.Context) error { return nil }, nil
 	}
-	mockSetupMetrics := func(cfg MetricConfig, res *resource.Resource) (metric.MeterProvider, ShutdownFunc) {
-		return noop.NewMeterProvider(), func(ctx context.Context) error { return nil }
+	mockSetupMetrics := func(cfg MetricConfig, res *resource.Resource) (metric.MeterProvider, ShutdownFunc, error) {
+		return noop.NewMeterProvider(), func(ctx context.Context) error { return nil }, nil
 	}
 
 	cfg := Config{
@@ -179,7 +180,7 @@ func TestInitStandardMetrics(t *testing.T) {
 		},
 	}
 
-	shutdown := initialization(cfg, mockSetupLogging, mockSetupTracing, mockSetupMetrics)
+	shutdown, _ := initialization(cfg, mockSetupLogging, mockSetupTracing, mockSetupMetrics)
 	defer func() {
 		assert.NoError(t, shutdown(context.Background()))
 	}()

@@ -1,5 +1,3 @@
-// start of ./metric_registry_test.go
-
 package o11y
 
 import (
@@ -11,7 +9,7 @@ import (
 
 func TestMetricRegistry_DynamicRegistration(t *testing.T) {
 	cfg := Config{Enabled: true, Metric: MetricConfig{Enabled: true, Exporter: "none"}}
-	shutdown := Init(cfg)
+	shutdown, _ := Init(cfg)
 	defer shutdown(context.Background())
 
 	name := "dynamic_counter"
@@ -34,7 +32,7 @@ func TestMetricRegistry_DynamicRegistration(t *testing.T) {
 
 func TestMetricRegistry_MissingMetric(t *testing.T) {
 	cfg := Config{Enabled: true, Metric: MetricConfig{Enabled: true, Exporter: "none"}}
-	shutdown := Init(cfg)
+	shutdown, _ := Init(cfg)
 	defer shutdown(context.Background())
 
 	// Recording to a non-existent metric should not panic (it just logs debug/warn)
@@ -49,7 +47,7 @@ func TestMetricRegistry_MissingMetric(t *testing.T) {
 
 func TestMetricRegistry_TypeMismatch(t *testing.T) {
 	cfg := Config{Enabled: true, Metric: MetricConfig{Enabled: true, Exporter: "none"}}
-	shutdown := Init(cfg)
+	shutdown, _ := Init(cfg)
 	defer shutdown(context.Background())
 
 	name := "mismatch_test"

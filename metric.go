@@ -2,6 +2,7 @@ package o11y
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -17,14 +18,14 @@ import (
 // It sets up the appropriate metric reader (e.g., Prometheus) and makes the provider
 // available globally for the application to create and record metrics.
 // It returns the configured provider and its corresponding shutdown function.
-func setupMetrics(cfg MetricConfig, res *resource.Resource) (metric.MeterProvider, ShutdownFunc) {
+func setupMetrics(cfg MetricConfig, res *resource.Resource) (metric.MeterProvider, ShutdownFunc, error) {
 	// 1. Handle the Enabled switch. If disabled, install a no-op provider and return.
 	if !cfg.Enabled {
 		// A MeterProvider with no reader will effectively discard all metrics.
 		mp := mt.NewMeterProvider(mt.WithResource(res))
 		otel.SetMeterProvider(mp)
 		// Return a no-op shutdown function.
-		return mp, func(context.Context) error { return nil }
+		return mp, func(context.Context) error { return nil }, nil
 	}
 
 	// 2. Create the appropriate metric reader based on the configuration.
@@ -54,8 +55,7 @@ func setupMetrics(cfg MetricConfig, res *resource.Resource) (metric.MeterProvide
 	}
 
 	if err != nil {
-		// A failure to create a reader is a critical configuration error.
-		log.Fatal().Err(err).Msgf("Failed to create metric reader for exporter: %s", cfg.Exporter)
+		return nil, nil, fmt.Errorf("failed to create metric reader for exporter %s: %w", cfg.Exporter, err)
 	}
 
 	// 3. Create the MeterProvider.
@@ -77,7 +77,7 @@ func setupMetrics(cfg MetricConfig, res *resource.Resource) (metric.MeterProvide
 			return err1
 		}
 		return err2
-	}
+	}, nil
 }
 
 // servePrometheusMetrics starts a dedicated HTTP server to expose the /metrics endpoint.

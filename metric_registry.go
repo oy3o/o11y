@@ -22,42 +22,49 @@ type MetricInstrument struct {
 
 // registry stores all pre-registered standard metric instruments.
 // We use atomic.Value to store map[string]MetricInstrument to achieve lock-free reads.
-var registry atomic.Value
+var (
+	registry atomic.Value
 
-// registryMu protects the write operations to the registry (Copy-On-Write).
-var registryMu sync.Mutex
+	// registryMu protects the write operations to the registry (Copy-On-Write).
+	registryMu sync.Mutex
+
+	// registryOnce ensures InitStandardMetrics is called only once.
+	registryOnce sync.Once
+)
 
 // InitStandardMetrics creates and registers all standard metrics that the o11y library provides.
 // This function is called once by o11y.Init to populate the registry.
 func InitStandardMetrics(meter metric.Meter) {
-	log.Debug().Msg("Initializing standard metrics registry...")
+	registryOnce.Do(func() {
+		log.Debug().Msg("Initializing standard metrics registry...")
 
-	// Initialize with an empty map if nil
-	if registry.Load() == nil {
-		registry.Store(make(map[string]MetricInstrument))
-	}
+		// Initialize with an empty map if nil
+		if registry.Load() == nil {
+			registry.Store(make(map[string]MetricInstrument))
+		}
 
-	// --- HTTP Server Metrics ---
-	RegisterFloat64Histogram("http.server.request.duration", "Measures the duration of inbound HTTP requests.", "s")
-	RegisterInt64Counter("http.server.request.count", "Counts the total number of inbound HTTP requests.", "{request}")
-	RegisterInt64UpDownCounter("http.server.active_requests", "Measures the number of concurrent inbound HTTP requests that are currently in-flight.", "{request}")
+		// --- HTTP Server Metrics ---
+		RegisterFloat64Histogram("http.server.request.duration", "Measures the duration of inbound HTTP requests.", "s")
+		RegisterInt64Counter("http.server.request.count", "Counts the total number of inbound HTTP requests.", "{request}")
+		RegisterInt64UpDownCounter("http.server.active_requests", "Measures the number of concurrent inbound HTTP requests that are currently in-flight.", "{request}")
 
-	// --- RPC/gRPC Metrics ---
-	// 注册 gRPC Panic 计数器
-	RegisterInt64Counter("rpc.server.panics", "Counts the number of panics in gRPC handlers.", "{panic}")
+		// --- RPC/gRPC Metrics ---
+		// 注册 gRPC Panic 计数器
+		RegisterInt64Counter("rpc.server.panics", "Counts the number of panics in gRPC handlers.", "{panic}")
 
-	// --- Database Metrics ---
-	RegisterFloat64Histogram("db.client.duration", "Measures the duration of database queries.", "s")
+		// --- Database Metrics ---
+		RegisterFloat64Histogram("db.client.duration", "Measures the duration of database queries.", "s")
 
-	// --- Application Operation Metrics ---
-	RegisterFloat64Histogram("app.operation.duration", "Measures the duration of a specific business logic operation.", "s")
-	RegisterInt64Counter("app.operation.errors.total", "Counts the total number of errors for a specific business logic operation.", "{error}")
+		// --- Application Operation Metrics ---
+		RegisterFloat64Histogram("app.operation.duration", "Measures the duration of a specific business logic operation.", "s")
+		RegisterInt64Counter("app.operation.errors.total", "Counts the total number of errors for a specific business logic operation.", "{error}")
 
-	// --- Manual/Business Metrics ---
-	RegisterInt64Counter("app.cache.events.total", "Counts cache hits and misses.", "{event}")
-	RegisterInt64Counter("app.login.events.total", "Counts successful logins by method.", "{login}")
+		// --- Manual/Business Metrics ---
+		RegisterInt64Counter("app.cache.events.total", "Counts cache hits and misses.", "{event}")
+		RegisterInt64Counter("app.login.events.total", "Counts successful logins by method.", "{login}")
 
-	log.Info().Msg("Standard metrics registry initialized.")
+		log.Info().Msg("Standard metrics registry initialized.")
+	})
 }
 
 // RegisterInt64Counter creates and registers a new Int64Counter.
