@@ -1,11 +1,14 @@
 package o11y
 
 import (
+	"context"
 	"database/sql"
 	"database/sql/driver"
 	"net/http"
 
 	"github.com/XSAM/otelsql"
+	"github.com/exaring/otelpgx"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -13,6 +16,27 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 	"google.golang.org/grpc"
 )
+
+// OpenPGXPool creates a new PostgreSQL connection pool with OpenTelemetry tracing enabled.
+// It wraps the pgxpool with otelpgx interceptors.
+func OpenPGXPool(ctx context.Context, connString string, opts ...otelpgx.Option) (*pgxpool.Pool, error) {
+	// Parse the connection string
+	cfg, err := pgxpool.ParseConfig(connString)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add otelpgx instrumentation
+	cfg.ConnConfig.Tracer = otelpgx.NewTracer(opts...)
+
+	// Create the pool
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return pool, nil
+}
 
 // OpenSQL is a drop-in replacement for `sql.Open` that is instrumented with OpenTelemetry.
 // It internally calls `otelsql.Open`, automatically creating trace spans and metrics for all
