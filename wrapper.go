@@ -136,7 +136,7 @@ func RegisterDBStatsMetrics(db *sql.DB, instanceName string) {
 
 	// otelsql.RegisterDBStatsMetrics requires a set of options. We provide the instanceName
 	// as a standard attribute to distinguish between different database pools.
-	err := otelsql.RegisterDBStatsMetrics(db,
+	_, err := otelsql.RegisterDBStatsMetrics(db,
 		otelsql.WithAttributes(
 			attribute.String("db.instance.id", instanceName),
 		),
