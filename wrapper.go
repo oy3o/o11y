@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"net/http"
+	"time"
 
 	"github.com/XSAM/otelsql"
 	"github.com/exaring/otelpgx"
@@ -17,19 +18,51 @@ import (
 	"google.golang.org/grpc"
 )
 
-// OpenPGXPool creates a new PostgreSQL connection pool with OpenTelemetry tracing enabled.
-// It wraps the pgxpool with otelpgx interceptors.
-func OpenPGXPool(ctx context.Context, connString string, opts ...otelpgx.Option) (*pgxpool.Pool, error) {
-	// Parse the connection string
+// PGXOption defines a function that modifies the pgxpool configuration.
+type PGXOption func(*pgxpool.Config)
+
+// WithPoolLimits sets the connection pool size constraints.
+func WithPoolLimits(min, max int) PGXOption {
+	return func(c *pgxpool.Config) {
+		// 防御性编程：Max 不能小于 Min
+		if max < min {
+			max = min
+		}
+		c.MinConns = int32(min)
+		c.MaxConns = int32(max)
+	}
+}
+
+// WithTimeouts sets the connection lifecycle timeouts.
+func WithTimeouts(maxLifetime, maxIdleTime time.Duration) PGXOption {
+	return func(c *pgxpool.Config) {
+		c.MaxConnLifetime = maxLifetime
+		c.MaxConnIdleTime = maxIdleTime
+	}
+}
+
+// OpenPGXPool creates a new PostgreSQL connection pool with sane defaults and OpenTelemetry tracing.
+func OpenPGXPool(ctx context.Context, connString string, opts ...PGXOption) (*pgxpool.Pool, error) {
+	// 1. Parse the base configuration from DSN
 	cfg, err := pgxpool.ParseConfig(connString)
 	if err != nil {
 		return nil, err
 	}
 
-	// Add otelpgx instrumentation
-	cfg.ConnConfig.Tracer = otelpgx.NewTracer(opts...)
+	// 2. Apply Sane Defaults
+	cfg.MinConns = 2 // 保持少量连接，减少冷启动延迟
 
-	// Create the pool
+	// 3. Apply User Options (Allow overrides)
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	// 默认注入 Tracing
+	if cfg.ConnConfig.Tracer == nil {
+		cfg.ConnConfig.Tracer = otelpgx.NewTracer()
+	}
+
+	// 4. Create the pool
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, err
