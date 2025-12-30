@@ -88,7 +88,7 @@ func Handler(cfg Config) func(http.Handler) http.Handler {
 				attribute.Int("http.status_code", m.Code),
 			}
 
-			AddToIntCounter(r.Context(), "http.server.request.count", 1, commonAttrs...)
+			AddToIntCounter(r.Context(), "http.server.request.total", 1, commonAttrs...)
 			// m.Duration is time.Duration
 			RecordInFloat64Histogram(r.Context(), "http.server.request.duration", m.Duration.Seconds(), commonAttrs...)
 		})

@@ -147,7 +147,7 @@ func fetchUserData(ctx context.Context, userID string) (string, error) {
 			)
 
 			time.Sleep(10 * time.Millisecond)
-			s.IncCounter("app.cache.events.total", attribute.String("result", "miss"))
+			s.IncCounter("cache.client.operation.total", attribute.String("result", "miss"))
 			s.AddEvent("cache_miss")
 
 			s.Log.Debug().Msg("Calling external user data service...")

@@ -5,6 +5,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/puzpuzpuz/xsync/v4"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -30,10 +31,16 @@ var (
 
 	// registryOnce ensures InitStandardMetrics is called only once.
 	registryOnce sync.Once
+
+	// localValues stores the current values of counters for in-process querying.
+	// Map key is the metric name. Value is *atomic.Int64.
+	// We use sync.Map for thread-safe concurrent access.
+	localValues = xsync.NewMap[string, *atomic.Int64]()
 )
 
 // InitStandardMetrics creates and registers all standard metrics that the o11y library provides.
 // This function is called once by o11y.Init to populate the registry.
+// {Namespace}.{Subsystem}.{Target}.{Suffix}
 func InitStandardMetrics(meter metric.Meter) {
 	registryOnce.Do(func() {
 		log.Debug().Msg("Initializing standard metrics registry...")
@@ -45,23 +52,22 @@ func InitStandardMetrics(meter metric.Meter) {
 
 		// --- HTTP Server Metrics ---
 		RegisterFloat64Histogram("http.server.request.duration", "Measures the duration of inbound HTTP requests.", "s")
-		RegisterInt64Counter("http.server.request.count", "Counts the total number of inbound HTTP requests.", "{request}")
+		RegisterInt64Counter("http.server.request.total", "Counts the total number of inbound HTTP requests.", "{request}")
 		RegisterInt64UpDownCounter("http.server.active_requests", "Measures the number of concurrent inbound HTTP requests that are currently in-flight.", "{request}")
 
 		// --- RPC/gRPC Metrics ---
 		// 注册 gRPC Panic 计数器
-		RegisterInt64Counter("rpc.server.panics", "Counts the number of panics in gRPC handlers.", "{panic}")
+		RegisterInt64Counter("rpc.server.panic.total", "Counts the number of panics in gRPC handlers.", "{panic}")
 
 		// --- Database Metrics ---
-		RegisterFloat64Histogram("db.client.duration", "Measures the duration of database queries.", "s")
+		RegisterFloat64Histogram("db.client.query.duration", "Measures the duration of database queries.", "s")
 
 		// --- Application Operation Metrics ---
-		RegisterFloat64Histogram("app.operation.duration", "Measures the duration of a specific business logic operation.", "s")
-		RegisterInt64Counter("app.operation.errors.total", "Counts the total number of errors for a specific business logic operation.", "{error}")
+		RegisterFloat64Histogram("biz.operation.duration", "Measures the duration of a specific business logic operation.", "s")
+		RegisterInt64Counter("biz.operation.error.total", "Counts the total number of errors for a specific business logic operation.", "{error}")
 
 		// --- Manual/Business Metrics ---
-		RegisterInt64Counter("app.cache.events.total", "Counts cache hits and misses.", "{event}")
-		RegisterInt64Counter("app.login.events.total", "Counts successful logins by method.", "{login}")
+		RegisterInt64Counter("cache.client.operation.total", "Counts cache hits and misses.", "{event}")
 
 		log.Info().Msg("Standard metrics registry initialized.")
 	})
@@ -191,6 +197,10 @@ func addToIntCounterImpl(ctx context.Context, name string, value int64, attribut
 	}
 
 	instrument.Int64Counter.Add(ctx, value, metric.WithAttributes(attributes...))
+
+	// Update local value for querying
+	val, _ := localValues.LoadOrStore(name, &atomic.Int64{})
+	val.Add(value)
 }
 
 // AddToInt64UpDownCounter finds a pre-registered Int64UpDownCounter and adds a value to it.
@@ -216,6 +226,10 @@ func addToInt64UpDownCounterImpl(ctx context.Context, name string, value int64, 
 	}
 
 	instrument.Int64UpDownCounter.Add(ctx, value, metric.WithAttributes(attributes...))
+
+	// Update local value for querying
+	val, _ := localValues.LoadOrStore(name, &atomic.Int64{})
+	val.Add(value)
 }
 
 // RecordInFloat64Histogram finds a pre-registered Float64Histogram and records a value.
@@ -249,4 +263,14 @@ func resetMetricFuncs() {
 	addToIntCounterFunc = addToIntCounterImpl
 	addToInt64UpDownCounterFunc = addToInt64UpDownCounterImpl
 	recordInFloat64HistogramFunc = recordInFloat64HistogramImpl
+}
+
+// GetMetricValue returns the current value of a registered counter.
+// This is useful for internal dashboards/APIs that need to display current stats.
+func GetMetricValue(name string) int64 {
+	val, ok := localValues.Load(name)
+	if !ok {
+		return 0
+	}
+	return val.Load()
 }

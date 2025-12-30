@@ -194,26 +194,20 @@ o11y.Run(ctx, "find_product", func(ctx context.Context, s o11y.State) error {
 
 `o11y` automatically collects the following standard metrics:
 
-#### **System & Runtime**
-- `system.cpu.utilization`: System CPU utilization.
-- `system.memory.usage`: System memory usage.
-- `go.goroutines`: The current number of Goroutines.
-- `go.gc.pause_total`: The total duration of GC pauses.
-
 #### **HTTP Server**
-- `http.server.request.count`: Total number of requests (labels: method, route, status_code).
+- `http.server.request.total`: Total number of requests (labels: method, route, status_code).
 - `http.server.request.duration`: Request latency distribution.
 - `http.server.active_requests`: Number of currently active requests.
 
 #### **Database**
-- `db.client.duration`: Duration of database queries.
+- `db.client.query.duration`: Duration of database queries.
 - `sql.db.stats.connections.open`: Total number of open connections.
 - `sql.db.stats.connections.idle`: Number of idle connections.
 - `sql.db.stats.connections.in_use`: Number of connections currently in use.
 
 #### **Business Logic (`o11y.Run`)**
-- `app.operation.duration`: Execution duration of the business logic block.
-- `app.operation.errors.total`: Total number of errors in the business logic block.
+- `biz.operation.duration`: Execution duration of the business logic block.
+- `biz.operation.error.total`: Total number of errors in the business logic block.
 
 ## Overall Architecture
 

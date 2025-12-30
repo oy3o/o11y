@@ -121,7 +121,7 @@ func TestHandlerMiddleware(t *testing.T) {
 
 	// Verify request count
 	assert.Len(t, addToIntCounterCalls, 1)
-	assert.Equal(t, "http.server.request.count", addToIntCounterCalls[0].Name)
+	assert.Equal(t, "http.server.request.total", addToIntCounterCalls[0].Name)
 	assert.Equal(t, int64(1), addToIntCounterCalls[0].Value)
 	assert.Contains(t, addToIntCounterCalls[0].Attributes, attribute.String("http.method", "GET"))
 	assert.Contains(t, addToIntCounterCalls[0].Attributes, attribute.String("http.route", "/test-route"))
@@ -215,7 +215,7 @@ func TestHandlerMiddlewarePanicRecovery(t *testing.T) {
 
 	// Verify request count (should still be incremented, even on panic)
 	assert.Len(t, addToIntCounterCalls, 1)
-	assert.Equal(t, "http.server.request.count", addToIntCounterCalls[0].Name)
+	assert.Equal(t, "http.server.request.total", addToIntCounterCalls[0].Name)
 	assert.Equal(t, int64(1), addToIntCounterCalls[0].Value)
 	assert.Contains(t, addToIntCounterCalls[0].Attributes, attribute.String("http.method", "GET"))
 	assert.Contains(t, addToIntCounterCalls[0].Attributes, attribute.String("http.route", "/panic-route"))

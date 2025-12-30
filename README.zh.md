@@ -186,26 +186,20 @@ o11y.Run(ctx, "find_product", func(ctx context.Context, s o11y.State) error {
 
 `o11y` 自动采集以下标准指标：
 
-#### **系统与运行时**
-- `system.cpu.utilization`: 系统 CPU 利用率。
-- `system.memory.usage`: 系统内存使用量。
-- `go.goroutines`: 当前 Goroutine 的数量。
-- `go.gc.pause_total`: GC 暂停时间的总和。
-
 #### **HTTP 服务器**
-- `http.server.request.count`: 请求总数 (标签: method, route, status_code)。
+- `http.server.request.total`: 请求总数 (标签: method, route, status_code)。
 - `http.server.request.duration`: 请求延迟分布。
 - `http.server.active_requests`: 当前活动请求数。
 
 #### **数据库**
-- `db.client.duration`: 数据库查询耗时分布。
+- `db.client.query.duration`: 数据库查询耗时分布。
 - `sql.db.stats.connections.open`: 当前打开的连接总数。
 - `sql.db.stats.connections.idle`: 空闲连接数。
 - `sql.db.stats.connections.in_use`: 正在使用的连接数。
 
 #### **业务逻辑 (`o11y.Run`)**
-- `app.operation.duration`: 业务逻辑块的执行时长。
-- `app.operation.errors.total`: 业务逻辑块的错误总数。
+- `biz.operation.duration`: 业务逻辑块的执行时长。
+- `biz.operation.error.total`: 业务逻辑块的错误总数。
 
 ## 整体架构
 

@@ -82,7 +82,7 @@ func (s State) AddEvent(name string, attributes ...attribute.KeyValue) {
 //
 // Example:
 //
-//	s.IncCounter("app.cache.events.total", attribute.String("result", "hit"))
+//	s.IncCounter("cache.client.operation.total", attribute.String("result", "hit"))
 func (s State) IncCounter(name string, attributes ...attribute.KeyValue) {
 	AddToIntCounter(s.ctx, name, 1, attributes...)
 }
@@ -97,7 +97,7 @@ func (s State) IncCounter(name string, attributes ...attribute.KeyValue) {
 //	startTime := time.Now()
 //	// ... perform a database operation ...
 //	duration := time.Since(startTime).Seconds()
-//	s.RecordHistogram("db.client.duration", duration, attribute.String("db.table", "users"))
+//	s.RecordHistogram("db.client.query.duration", duration, attribute.String("db.table", "users"))
 func (s State) RecordHistogram(name string, value float64, attributes ...attribute.KeyValue) {
 	RecordInFloat64Histogram(s.ctx, name, value, attributes...)
 }

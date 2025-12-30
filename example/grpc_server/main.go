@@ -116,7 +116,7 @@ func main() {
 	cfg := loadConfig()
 
 	// 2. 初始化 o11y (日志、Trace、Metrics)
-	// 提示：确保在 metric_registry.go 中注册了 "rpc.server.panics" 和 "business.greetings.total"
+	// 提示：确保在 metric_registry.go 中注册了 "rpc.server.panic.total" 和 "business.greetings.total"
 	shutdown, err := o11y.Init(cfg.O11y)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize o11y")
@@ -124,7 +124,7 @@ func main() {
 	defer shutdown(context.Background())
 
 	// 手动注册示例中用到的自定义指标 (通常放在 init 或 metric_registry.go 中)
-	o11y.RegisterInt64Counter("rpc.server.panics", "gRPC Panics", "{panic}")
+	o11y.RegisterInt64Counter("rpc.server.panic.total", "gRPC Panics", "{panic}")
 	o11y.RegisterInt64Counter("business.greetings.total", "Total greetings sent", "{count}")
 
 	// 3. 启动监听

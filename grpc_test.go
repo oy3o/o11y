@@ -34,7 +34,7 @@ func TestUnaryServerInterceptor_Panic(t *testing.T) {
 	defer shutdown(context.Background())
 
 	// Ensure the metric used in panic recovery is registered to avoid log noise/errors
-	RegisterInt64Counter("rpc.server.panics", "test", "{panic}")
+	RegisterInt64Counter("rpc.server.panic.total", "test", "{panic}")
 
 	interceptor := unaryServerInterceptor()
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
@@ -60,7 +60,7 @@ func TestStreamServerInterceptor_Panic(t *testing.T) {
 	shutdown, _ := Init(cfg)
 	defer shutdown(context.Background())
 
-	RegisterInt64Counter("rpc.server.panics", "test", "{panic}")
+	RegisterInt64Counter("rpc.server.panic.total", "test", "{panic}")
 
 	interceptor := streamServerInterceptor()
 	handler := func(srv interface{}, stream grpc.ServerStream) error {

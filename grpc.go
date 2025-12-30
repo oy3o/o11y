@@ -61,7 +61,7 @@ func unaryServerInterceptor() grpc.UnaryServerInterceptor {
 				span.SetStatus(codes.Error, fmt.Sprintf("panic: %v", r))
 
 				// 记录 Panic 指标
-				AddToIntCounter(ctx, "rpc.server.panics", 1, attribute.String("method", info.FullMethod))
+				AddToIntCounter(ctx, "rpc.server.panic.total", 1, attribute.String("method", info.FullMethod))
 
 				// 返回 Internal 错误给客户端
 				err = status.Errorf(gcodes.Internal, "Internal Server Error")
@@ -111,7 +111,7 @@ func streamServerInterceptor() grpc.StreamServerInterceptor {
 				span.RecordError(errParams)
 				span.SetStatus(codes.Error, errParams.Error())
 
-				AddToIntCounter(ctx, "rpc.server.panics", 1, attribute.String("method", info.FullMethod))
+				AddToIntCounter(ctx, "rpc.server.panic.total", 1, attribute.String("method", info.FullMethod))
 
 				// 3. 将 Panic 转换为 gRPC 错误返回，而不是导致进程崩溃
 				err = status.Errorf(gcodes.Internal, "Internal Server Error: %v", r)

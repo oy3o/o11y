@@ -60,7 +60,7 @@ func Run(
 
 			// 记录 Metrics (因为正常的 return err 路径会被跳过，所以这里要手动记)
 			operationAttr := attribute.String("operation", name)
-			s.IncCounter("app.operation.errors.total", operationAttr)
+			s.IncCounter("biz.operation.error.total", operationAttr)
 
 			// 将 panic 错误赋值给返回变量
 			err = panicErr
@@ -72,7 +72,7 @@ func Run(
 	defer func() {
 		duration := time.Since(startTime).Seconds()
 		operationAttr := attribute.String("operation", name)
-		s.RecordHistogram("app.operation.duration", duration, operationAttr)
+		s.RecordHistogram("biz.operation.duration", duration, operationAttr)
 	}()
 
 	// 4. Execute business logic
@@ -83,7 +83,7 @@ func Run(
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		s.IncCounter("app.operation.errors.total", operationAttr)
+		s.IncCounter("biz.operation.error.total", operationAttr)
 	} else {
 		span.SetStatus(codes.Ok, "success")
 		// No more MetricOptions handling here.
