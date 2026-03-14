@@ -51,7 +51,7 @@ func New(cfg Config,
 	res, err := resource.Merge(
 		resource.Default(),
 		resource.NewWithAttributes(
-			semconv.SchemaURL,
+			"", // Use empty schema URL to avoid conflict with resource.Default()
 			semconv.ServiceName(cfg.Service),
 			semconv.ServiceVersion(cfg.Version),
 			semconv.DeploymentEnvironmentName(cfg.Environment),
