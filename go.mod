@@ -6,7 +6,7 @@ require (
 	github.com/XSAM/otelsql v0.41.0
 	github.com/exaring/otelpgx v0.10.0
 	github.com/felixge/httpsnoop v1.0.4
-	github.com/jackc/pgx/v5 v5.8.0
+	github.com/jackc/pgx/v5 v5.9.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/puzpuzpuz/xsync/v4 v4.4.0
 	github.com/rs/zerolog v1.34.0
@@ -24,7 +24,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.42.0
 	go.opentelemetry.io/otel/trace v1.42.0
 	golang.org/x/sync v0.20.0
-	google.golang.org/grpc v1.79.2
+	google.golang.org/grpc v1.79.3
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -64,7 +64,7 @@ require (
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260311181403-84a4fc48630c // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260311181403-84a4fc48630c // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260319201613-d00831a3d3e7 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260319201613-d00831a3d3e7 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )

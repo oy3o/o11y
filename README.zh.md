@@ -66,12 +66,11 @@ import (
     "context"
     "net/http"
     "github.com/oy3o/o11y"
-    "github.com/oy3o/conf"
 )
 
 func main() {
     // 1. 加载配置
-    cfg, _ := conf.Load[Config]("config.yaml")
+    cfg, _ := LoadConfig[Config]("config.yaml")
 
     // 2. 初始化 o11y
     shutdown,_ := o11y.Init(cfg)
